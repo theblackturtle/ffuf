@@ -1,4 +1,4 @@
-module github.com/ffuf/ffuf
+module github.com/theblackturtle/ffuf
 
 go 1.11
 
