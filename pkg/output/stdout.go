@@ -129,10 +129,10 @@ func (s *Stdoutput) Banner() error {
 }
 
 func (s *Stdoutput) Progress(status ffuf.Progress) {
-	if s.config.Quiet {
-		// No progress for quiet mode
-		return
-	}
+	//if s.config.Quiet {
+	//	// No progress for quiet mode
+	//	return
+	//}
 
 	dur := time.Now().Sub(status.StartedAt)
 	runningSecs := int(dur / time.Second)
@@ -267,9 +267,7 @@ func (s *Stdoutput) writeResultToFile(resp ffuf.Response) string {
 }
 
 func (s *Stdoutput) printResult(resp ffuf.Response) {
-	if s.config.Quiet {
-		s.resultQuiet(resp)
-	} else {
+	if !s.config.Quiet {
 		if len(resp.Request.Input) > 1 || s.config.Verbose || len(s.config.OutputDirectory) > 0 {
 			// Print a multi-line result (when using multiple input keywords and wordlists)
 			s.resultMultiline(resp)
