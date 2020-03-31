@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ffuf/ffuf/pkg/ffuf"
+	"github.com/theblackturtle/ffuf/pkg/ffuf"
 )
 
 type SizeFilter struct {

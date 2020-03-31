@@ -13,11 +13,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ffuf/ffuf/pkg/ffuf"
-	"github.com/ffuf/ffuf/pkg/filter"
-	"github.com/ffuf/ffuf/pkg/input"
-	"github.com/ffuf/ffuf/pkg/output"
-	"github.com/ffuf/ffuf/pkg/runner"
+	"github.com/theblackturtle/ffuf/pkg/ffuf"
+	"github.com/theblackturtle/ffuf/pkg/filter"
+	"github.com/theblackturtle/ffuf/pkg/input"
+	"github.com/theblackturtle/ffuf/pkg/output"
+	"github.com/theblackturtle/ffuf/pkg/runner"
 )
 
 type cliOptions struct {

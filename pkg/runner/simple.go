@@ -10,7 +10,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/ffuf/ffuf/pkg/ffuf"
+	"github.com/theblackturtle/ffuf/pkg/ffuf"
 	"github.com/valyala/fasthttp"
 )
 

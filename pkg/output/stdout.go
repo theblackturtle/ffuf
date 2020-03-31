@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ffuf/ffuf/pkg/ffuf"
+	"github.com/theblackturtle/ffuf/pkg/ffuf"
 )
 
 const (
