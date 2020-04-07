@@ -97,7 +97,7 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
 	httpresp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(httpresp)
 
-	resp := ffuf.NewResponse(httpresp, req)
+
 
 	redirectTimes := 0
 redirects:
@@ -105,6 +105,7 @@ redirects:
 		err = r.client.DoTimeout(httpreq, httpresp, time.Duration(r.config.Timeout)*time.Second)
 		if err != nil {
 			if errors.Is(err, fasthttp.ErrBodyTooLarge) {
+				resp := ffuf.NewResponse(httpresp, req)
 				resp.Cancelled = true
 				return resp, nil
 			} else {
@@ -127,7 +128,7 @@ redirects:
 		}
 		break redirects
 	}
-
+	resp := ffuf.NewResponse(httpresp, req)
 	// Check if we should download the resource or not
 	size, err := strconv.Atoi(string(httpresp.Header.Peek(fasthttp.HeaderContentLength)))
 	if err == nil {
