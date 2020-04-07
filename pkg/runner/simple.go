@@ -82,6 +82,9 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
 	httpreq.Header.Set("Accept","text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
 	httpreq.Header.Set("Accept-Language","en-US,en;q=0.8")
 
+	for key, value := range req.Headers {
+		httpreq.Header.Set(key, value)
+	}
 	// set default User-Agent header if not present
 	if _, ok := req.Headers["User-Agent"]; !ok {
 		httpreq.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36")
@@ -91,13 +94,10 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
 	if _, ok := req.Headers["Host"]; ok {
 		httpreq.SetHost(req.Headers["Host"])
 	}
-	for key, value := range req.Headers {
-		httpreq.Header.Set(key, value)
-	}
+
 
 	httpresp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(httpresp)
-
 
 
 	redirectTimes := 0
