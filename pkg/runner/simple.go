@@ -3,7 +3,6 @@ package runner
 import (
 	"crypto/tls"
 	"errors"
-	"fmt"
 	"net"
 	"net/textproto"
 	"strconv"
@@ -80,10 +79,12 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
 	httpreq.SetRequestURI(req.Url)
 	httpreq.Header.SetMethod(req.Method)
 	httpreq.SetBody(req.Data)
+	httpreq.Header.Set("Accept","text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+	httpreq.Header.Set("Accept-Language","en-US,en;q=0.8")
 
 	// set default User-Agent header if not present
 	if _, ok := req.Headers["User-Agent"]; !ok {
-		httpreq.Header.Set("User-Agent", fmt.Sprintf("%s v%s", "Fuzz Faster U Fool", ffuf.VERSION))
+		httpreq.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36")
 	}
 
 	// Handle Go http.Request special cases
