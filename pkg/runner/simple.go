@@ -2,6 +2,7 @@ package runner
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
 	"net/textproto"
@@ -15,7 +16,10 @@ import (
 )
 
 //Download results < 5MB
-const MAX_DOWNLOAD_SIZE = 5242880
+const (
+	MAX_DOWNLOAD_SIZE = 5242880
+	MaxRedirectTimes  = 16
+)
 
 type SimpleRunner struct {
 	config *ffuf.Config
@@ -35,6 +39,7 @@ func NewSimpleRunner(conf *ffuf.Config, replay bool) ffuf.RunnerProvider {
 			InsecureSkipVerify: true,
 			Renegotiation:      tls.RenegotiateOnceAsClient, // For "local error: tls: no renegotiation"
 		},
+		MaxResponseBodySize: MAX_DOWNLOAD_SIZE,
 	}
 
 	return &simplerunner
@@ -66,7 +71,6 @@ func (r *SimpleRunner) Prepare(input map[string][]byte) (ffuf.Request, error) {
 
 /*
 TODO: fix DumpRequestOut, DumpResponse, set proxy
-NOTE: Fasthttp's DoTimeout not have option to redirect, so need to create new function for this job
 */
 
 func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
@@ -93,15 +97,38 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
 	httpresp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(httpresp)
 
-	err = r.client.DoTimeout(httpreq, httpresp, time.Duration(r.config.Timeout)*time.Second)
-	if err != nil {
-		return ffuf.Response{}, err
-	}
-
 	resp := ffuf.NewResponse(httpresp, req)
 
-	// Check if we should download the resource or not
+	redirectTimes := 0
+redirects:
+	for {
+		err = r.client.DoTimeout(httpreq, httpresp, time.Duration(r.config.Timeout)*time.Second)
+		if err != nil {
+			if errors.Is(err, fasthttp.ErrBodyTooLarge) {
+				resp.Cancelled = true
+				return resp, nil
+			} else {
+				return ffuf.Response{}, err
+			}
+		}
+		if fasthttp.StatusCodeIsRedirect(httpresp.StatusCode()) && r.config.FollowRedirects {
+			redirectTimes++
+			if redirectTimes > MaxRedirectTimes {
+				return ffuf.Response{}, errors.New("too many redirects")
+			}
 
+			nextLocation := httpresp.Header.Peek(fasthttp.HeaderLocation)
+			if len(nextLocation) == 0 {
+				return ffuf.Response{}, errors.New("location header not found")
+			}
+			req.Url = string(nextLocation)
+			httpreq.SetRequestURI(getRedirectURL(req.Url, nextLocation))
+			continue redirects
+		}
+		break redirects
+	}
+
+	// Check if we should download the resource or not
 	size, err := strconv.Atoi(string(httpresp.Header.Peek(fasthttp.HeaderContentLength)))
 	if err == nil {
 		resp.ContentLength = int64(size)
@@ -113,18 +140,14 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
 
 	contentEncoding := string(httpresp.Header.Peek(fasthttp.HeaderContentEncoding))
 	var respbody []byte
-	if contentEncoding != "" {
-		if contentEncoding == "gzip" {
-			respbody, err = httpresp.BodyGunzip()
-			if err != nil {
-				return ffuf.Response{}, err
-			}
-		} else if contentEncoding == "deflate" {
-			respbody, err = httpresp.BodyInflate()
-			if err != nil {
-				return ffuf.Response{}, err
-			}
-		} else {
+	if contentEncoding == "gzip" {
+		respbody, err = httpresp.BodyGunzip()
+		if err != nil {
+			return ffuf.Response{}, err
+		}
+	} else if contentEncoding == "deflate" {
+		respbody, err = httpresp.BodyInflate()
+		if err != nil {
 			return ffuf.Response{}, err
 		}
 	} else {
@@ -140,4 +163,13 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
 	resp.ContentLines = int64(linesSize)
 
 	return resp, nil
+}
+
+func getRedirectURL(baseURL string, location []byte) string {
+	u := fasthttp.AcquireURI()
+	u.Update(baseURL)
+	u.UpdateBytes(location)
+	redirectURL := u.String()
+	fasthttp.ReleaseURI(u)
+	return redirectURL
 }
