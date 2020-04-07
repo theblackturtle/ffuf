@@ -34,6 +34,9 @@ func NewSimpleRunner(conf *ffuf.Config, replay bool) ffuf.RunnerProvider {
 		Dial: func(addr string) (net.Conn, error) {
 			return fasthttp.DialTimeout(addr, 15*time.Second)
 		},
+		ReadBufferSize:      4096,
+		WriteBufferSize:     4096,
+		MaxIdleConnDuration: time.Minute,
 		TLSConfig: &tls.Config{
 			InsecureSkipVerify: true,
 			Renegotiation:      tls.RenegotiateOnceAsClient, // For "local error: tls: no renegotiation"
@@ -79,8 +82,8 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
 	httpreq.SetRequestURI(req.Url)
 	httpreq.Header.SetMethod(req.Method)
 	httpreq.SetBody(req.Data)
-	httpreq.Header.Set("Accept","text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
-	httpreq.Header.Set("Accept-Language","en-US,en;q=0.8")
+	httpreq.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+	httpreq.Header.Set("Accept-Language", "en-US,en;q=0.8")
 
 	for key, value := range req.Headers {
 		httpreq.Header.Set(key, value)
@@ -95,10 +98,8 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
 		httpreq.SetHost(req.Headers["Host"])
 	}
 
-
 	httpresp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseResponse(httpresp)
-
 
 	redirectTimes := 0
 redirects:
