@@ -1,9 +1,9 @@
 package ffuf
 
 import (
-	"net/url"
+    "net/url"
 
-	"github.com/valyala/fasthttp"
+    "github.com/valyala/fasthttp"
 )
 
 // Response struct holds the meaningful data returned from request and is meant for passing to filters

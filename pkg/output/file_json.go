@@ -1,9 +1,10 @@
 package output
 
 import (
-    "encoding/json"
     "io/ioutil"
     "time"
+
+    "github.com/json-iterator/go"
 
     "github.com/theblackturtle/ffuf/pkg/ffuf"
 )
@@ -41,7 +42,7 @@ func writeEJSON(config *ffuf.Config, res []Result) error {
         Results:     res,
     }
 
-    outBytes, err := json.Marshal(outJSON)
+    outBytes, err := jsoniter.Marshal(outJSON)
     if err != nil {
         return err
     }
@@ -78,7 +79,7 @@ func writeJSON(config *ffuf.Config, res []Result) error {
         Results:     jsonRes,
         Config:      config,
     }
-    outBytes, err := json.Marshal(outJSON)
+    outBytes, err := jsoniter.Marshal(outJSON)
     if err != nil {
         return err
     }

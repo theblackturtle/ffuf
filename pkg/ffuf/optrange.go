@@ -1,10 +1,11 @@
 package ffuf
 
 import (
-    "encoding/json"
     "fmt"
     "strconv"
     "strings"
+
+    jsoniter "github.com/json-iterator/go"
 )
 
 // optRange stores either a single float, in which case the value is stored in min and IsRange is false,
@@ -27,14 +28,14 @@ func (o *optRange) MarshalJSON() ([]byte, error) {
     } else {
         value = fmt.Sprintf("%.2f-%.2f", o.Min, o.Max)
     }
-    return json.Marshal(&optRangeJSON{
+    return jsoniter.Marshal(&optRangeJSON{
         Value: value,
     })
 }
 
 func (o *optRange) UnmarshalJSON(b []byte) error {
     var inc optRangeJSON
-    err := json.Unmarshal(b, &inc)
+    err := jsoniter.Unmarshal(b, &inc)
     if err != nil {
         return err
     }

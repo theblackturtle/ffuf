@@ -1,11 +1,11 @@
 package filter
 
 import (
-    "encoding/json"
     "fmt"
     "strconv"
     "strings"
 
+    jsoniter "github.com/json-iterator/go"
     "github.com/theblackturtle/ffuf/pkg/ffuf"
 )
 
@@ -34,7 +34,7 @@ func (f *WordFilter) MarshalJSON() ([]byte, error) {
             value = append(value, fmt.Sprintf("%d-%d", v.Min, v.Max))
         }
     }
-    return json.Marshal(&struct {
+    return jsoniter.Marshal(&struct {
         Value string `json:"value"`
     }{
         Value: strings.Join(value, ","),

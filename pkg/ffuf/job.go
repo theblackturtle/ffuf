@@ -183,7 +183,7 @@ func (j *Job) interruptMonitor() {
     sigChan := make(chan os.Signal, 2)
     signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
     go func() {
-        for _ = range sigChan {
+        for range sigChan {
             j.Error = "Caught keyboard interrupt (Ctrl-C)\n"
             j.Stop()
         }

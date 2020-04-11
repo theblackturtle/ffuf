@@ -1,11 +1,11 @@
 package filter
 
 import (
-    "encoding/json"
     "fmt"
     "regexp"
     "strings"
 
+    jsoniter "github.com/json-iterator/go"
     "github.com/theblackturtle/ffuf/pkg/ffuf"
 )
 
@@ -23,7 +23,7 @@ func NewRegexpFilter(value string) (ffuf.FilterProvider, error) {
 }
 
 func (f *RegexpFilter) MarshalJSON() ([]byte, error) {
-    return json.Marshal(&struct {
+    return jsoniter.Marshal(&struct {
         Value string `json:"value"`
     }{
         Value: f.valueRaw,
