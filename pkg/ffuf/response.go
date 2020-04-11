@@ -3,7 +3,6 @@ package ffuf
 import (
 	"github.com/valyala/fasthttp"
 	"net/url"
-	"strings"
 )
 
 // Response struct holds the meaningful data returned from request and is meant for passing to filters
@@ -44,15 +43,11 @@ func (resp *Response) GetRedirectLocation(absolute bool) string {
 }
 
 func NewResponse(httpresp *fasthttp.Response, req *Request) Response {
-	headers := map[string][]string{}
-	for _, header := range strings.Split(string(httpresp.Header.Header()), "\n") {
-		args := strings.SplitN(header, ":", 2)
-		if len(args) == 2 {
-			headers[strings.TrimSpace(args[0])] = []string{strings.TrimSpace(args[1])}
-		}
-	}
-
 	var resp Response
+	headers := map[string][]string{}
+	httpresp.Header.VisitAll(func(key, value []byte) {
+		headers[string(key)] = []string{string(value)}
+	})
 	resp.Request = req
 	resp.StatusCode = int64(httpresp.StatusCode())
 	resp.Headers = headers
