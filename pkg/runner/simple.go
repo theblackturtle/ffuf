@@ -32,7 +32,7 @@ func NewSimpleRunner(conf *ffuf.Config, replay bool) ffuf.RunnerProvider {
 	simplerunner.client = &fasthttp.Client{
 		NoDefaultUserAgentHeader: true,
 		Dial: func(addr string) (net.Conn, error) {
-			return fasthttp.DialTimeout(addr, 15*time.Second)
+			return fasthttp.DialTimeout(addr, time.Duration(conf.Timeout)*time.Second)
 		},
 		ReadBufferSize:      4096,
 		WriteBufferSize:     4096,
@@ -102,7 +102,6 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
 	defer fasthttp.ReleaseResponse(httpresp)
 
 	redirectTimes := 0
-redirects:
 	for {
 		err = r.client.DoTimeout(httpreq, httpresp, time.Duration(r.config.Timeout)*time.Second)
 		if err != nil {
@@ -126,9 +125,9 @@ redirects:
 			}
 			req.Url = string(nextLocation)
 			httpreq.SetRequestURI(getRedirectURL(req.Url, nextLocation))
-			continue redirects
+			continue
 		}
-		break redirects
+		break
 	}
 	resp := ffuf.NewResponse(httpresp, req)
 	// Check if we should download the resource or not
