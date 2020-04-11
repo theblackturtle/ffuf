@@ -34,8 +34,8 @@ func NewSimpleRunner(conf *ffuf.Config, replay bool) ffuf.RunnerProvider {
         Dial: func(addr string) (net.Conn, error) {
             return fasthttp.DialTimeout(addr, time.Duration(conf.Timeout)*time.Second)
         },
-        ReadBufferSize:      4096,
-        WriteBufferSize:     4096,
+        ReadBufferSize:      1024*48,
+        WriteBufferSize:     1024*48,
         MaxIdleConnDuration: time.Minute,
         TLSConfig: &tls.Config{
             InsecureSkipVerify: true,
