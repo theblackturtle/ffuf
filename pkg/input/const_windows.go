@@ -3,6 +3,6 @@
 package input
 
 const (
-	SHELL_CMD = "cmd.exe"
-	SHELL_ARG = "/C"
+    SHELL_CMD = "cmd.exe"
+    SHELL_ARG = "/C"
 )

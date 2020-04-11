@@ -1,15 +1,15 @@
 package output
 
 import (
-	"html/template"
-	"os"
-	"time"
+    "html/template"
+    "os"
+    "time"
 
-	"github.com/theblackturtle/ffuf/pkg/ffuf"
+    "github.com/theblackturtle/ffuf/pkg/ffuf"
 )
 
 const (
-	markdownTemplate = `# FFUF Report
+    markdownTemplate = `# FFUF Report
 
   Command line : ` + "`{{.CommandLine}}`" + `
   Time: ` + "{{ .Time }}" + `
@@ -22,29 +22,29 @@ const (
 
 func writeMarkdown(config *ffuf.Config, res []Result) error {
 
-	ti := time.Now()
+    ti := time.Now()
 
-	keywords := make([]string, 0)
-	for _, inputprovider := range config.InputProviders {
-		keywords = append(keywords, inputprovider.Keyword)
-	}
+    keywords := make([]string, 0)
+    for _, inputprovider := range config.InputProviders {
+        keywords = append(keywords, inputprovider.Keyword)
+    }
 
-	outMD := htmlFileOutput{
-		CommandLine: config.CommandLine,
-		Time:        ti.Format(time.RFC3339),
-		Results:     res,
-		Keys:        keywords,
-	}
+    outMD := htmlFileOutput{
+        CommandLine: config.CommandLine,
+        Time:        ti.Format(time.RFC3339),
+        Results:     res,
+        Keys:        keywords,
+    }
 
-	f, err := os.Create(config.OutputFile)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
+    f, err := os.Create(config.OutputFile)
+    if err != nil {
+        return err
+    }
+    defer f.Close()
 
-	templateName := "output.md"
-	t := template.New(templateName).Delims("{{", "}}")
-	t.Parse(markdownTemplate)
-	t.Execute(f, outMD)
-	return nil
+    templateName := "output.md"
+    t := template.New(templateName).Delims("{{", "}}")
+    t.Parse(markdownTemplate)
+    t.Execute(f, outMD)
+    return nil
 }

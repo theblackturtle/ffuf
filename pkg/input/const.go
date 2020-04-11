@@ -3,6 +3,6 @@
 package input
 
 const (
-	SHELL_CMD = "/bin/sh"
-	SHELL_ARG = "-c"
+    SHELL_CMD = "/bin/sh"
+    SHELL_ARG = "-c"
 )

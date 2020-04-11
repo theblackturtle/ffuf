@@ -1,14 +1,14 @@
 package ffuf
 
 import (
-	"time"
+    "time"
 )
 
 type Progress struct {
-	StartedAt  time.Time
-	ReqCount   int
-	ReqTotal   int
-	QueuePos   int
-	QueueTotal int
-	ErrorCount int
+    StartedAt  time.Time
+    ReqCount   int
+    ReqTotal   int
+    QueuePos   int
+    QueueTotal int
+    ErrorCount int
 }

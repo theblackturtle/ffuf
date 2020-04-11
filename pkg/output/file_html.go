@@ -1,22 +1,22 @@
 package output
 
 import (
-	"html/template"
-	"os"
-	"time"
+    "html/template"
+    "os"
+    "time"
 
-	"github.com/theblackturtle/ffuf/pkg/ffuf"
+    "github.com/theblackturtle/ffuf/pkg/ffuf"
 )
 
 type htmlFileOutput struct {
-	CommandLine string
-	Time        string
-	Keys        []string
-	Results     []Result
+    CommandLine string
+    Time        string
+    Keys        []string
+    Results     []Result
 }
 
 const (
-	htmlTemplate = `
+    htmlTemplate = `
 <!DOCTYPE html>
 <html>
   <head>
@@ -124,63 +124,63 @@ const (
 
 // colorizeResults returns a new slice with HTMLColor attribute
 func colorizeResults(results []Result) []Result {
-	newResults := make([]Result, 0)
+    newResults := make([]Result, 0)
 
-	for _, r := range results {
-		result := r
-		result.HTMLColor = "black"
+    for _, r := range results {
+        result := r
+        result.HTMLColor = "black"
 
-		s := result.StatusCode
+        s := result.StatusCode
 
-		if s >= 200 && s <= 299 {
-			result.HTMLColor = "#adea9e"
-		}
+        if s >= 200 && s <= 299 {
+            result.HTMLColor = "#adea9e"
+        }
 
-		if s >= 300 && s <= 399 {
-			result.HTMLColor = "#bbbbe6"
-		}
+        if s >= 300 && s <= 399 {
+            result.HTMLColor = "#bbbbe6"
+        }
 
-		if s >= 400 && s <= 499 {
-			result.HTMLColor = "#d2cb7e"
-		}
+        if s >= 400 && s <= 499 {
+            result.HTMLColor = "#d2cb7e"
+        }
 
-		if s >= 500 && s <= 599 {
-			result.HTMLColor = "#de8dc1"
-		}
+        if s >= 500 && s <= 599 {
+            result.HTMLColor = "#de8dc1"
+        }
 
-		newResults = append(newResults, result)
-	}
+        newResults = append(newResults, result)
+    }
 
-	return newResults
+    return newResults
 }
 
 func writeHTML(config *ffuf.Config, results []Result) error {
 
-	results = colorizeResults(results)
+    results = colorizeResults(results)
 
-	ti := time.Now()
+    ti := time.Now()
 
-	keywords := make([]string, 0)
-	for _, inputprovider := range config.InputProviders {
-		keywords = append(keywords, inputprovider.Keyword)
-	}
+    keywords := make([]string, 0)
+    for _, inputprovider := range config.InputProviders {
+        keywords = append(keywords, inputprovider.Keyword)
+    }
 
-	outHTML := htmlFileOutput{
-		CommandLine: config.CommandLine,
-		Time:        ti.Format(time.RFC3339),
-		Results:     results,
-		Keys:        keywords,
-	}
+    outHTML := htmlFileOutput{
+        CommandLine: config.CommandLine,
+        Time:        ti.Format(time.RFC3339),
+        Results:     results,
+        Keys:        keywords,
+    }
 
-	f, err := os.Create(config.OutputFile)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
+    f, err := os.Create(config.OutputFile)
+    if err != nil {
+        return err
+    }
+    defer f.Close()
 
-	templateName := "output.html"
-	t := template.New(templateName).Delims("{{", "}}")
-	t.Parse(htmlTemplate)
-	t.Execute(f, outHTML)
-	return nil
+    templateName := "output.html"
+    t := template.New(templateName).Delims("{{", "}}")
+    t.Parse(htmlTemplate)
+    t.Execute(f, outHTML)
+    return nil
 }
