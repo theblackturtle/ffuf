@@ -32,7 +32,7 @@ func NewSimpleRunner(conf *ffuf.Config, replay bool) ffuf.RunnerProvider {
     simplerunner.client = &fasthttp.Client{
         NoDefaultUserAgentHeader: true,
         Dial: func(addr string) (net.Conn, error) {
-            return fasthttp.DialTimeout(addr, time.Duration(conf.Timeout)*time.Second)
+            return fasthttp.Dial(addr)
         },
         ReadBufferSize:      1024*48,
         WriteBufferSize:     1024*48,
