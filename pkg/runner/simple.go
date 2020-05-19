@@ -36,7 +36,6 @@ func NewSimpleRunner(conf *ffuf.Config, replay bool) ffuf.RunnerProvider {
         },
         ReadBufferSize:      1024*48,
         WriteBufferSize:     1024*48,
-        MaxIdleConnDuration: time.Minute,
         TLSConfig: &tls.Config{
             InsecureSkipVerify: true,
             Renegotiation:      tls.RenegotiateOnceAsClient, // For "local error: tls: no renegotiation"
