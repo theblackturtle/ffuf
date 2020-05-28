@@ -93,9 +93,9 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
     }
 
     // Handle Go http.Request special cases
-    if _, ok := req.Headers["Host"]; ok {
-        httpreq.SetHost(req.Headers["Host"])
-    }
+    // if _, ok := req.Headers["Host"]; ok {
+    //     httpreq.SetHost(req.Headers["Host"])
+    // }
 
     httpresp := fasthttp.AcquireResponse()
     defer fasthttp.ReleaseResponse(httpresp)
