@@ -1,6 +1,7 @@
 package runner
 
 import (
+    "context"
     "crypto/tls"
     "errors"
     "net"
@@ -27,15 +28,25 @@ type SimpleRunner struct {
 
 func NewSimpleRunner(conf *ffuf.Config, replay bool) ffuf.RunnerProvider {
     var simplerunner SimpleRunner
-
+    dialer := fasthttp.TCPDialer{
+        Concurrency: 1000,
+        Resolver: &net.Resolver{
+            PreferGo:     true,
+            StrictErrors: false,
+            Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+                d := net.Dialer{}
+                return d.DialContext(ctx, "udp", "8.8.8.8:53")
+            },
+        },
+    }
     simplerunner.config = conf
     simplerunner.client = &fasthttp.Client{
         NoDefaultUserAgentHeader: true,
         Dial: func(addr string) (net.Conn, error) {
-            return fasthttp.DialDualStackTimeout(addr, 30*time.Second)
+            return dialer.DialDualStackTimeout(addr, 30*time.Second)
         },
-        ReadBufferSize:      1024*48,
-        WriteBufferSize:     1024*48,
+        ReadBufferSize:  1024 * 48,
+        WriteBufferSize: 1024 * 48,
         TLSConfig: &tls.Config{
             InsecureSkipVerify: true,
             Renegotiation:      tls.RenegotiateOnceAsClient, // For "local error: tls: no renegotiation"
