@@ -152,17 +152,19 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
 
     contentEncoding := string(httpresp.Header.Peek(fasthttp.HeaderContentEncoding))
     var respbody []byte
-    if contentEncoding == "gzip" {
+
+    switch contentEncoding {
+    case "gzip":
         respbody, err = httpresp.BodyGunzip()
         if err != nil {
             return ffuf.Response{}, err
         }
-    } else if contentEncoding == "deflate" {
+    case "deflate":
         respbody, err = httpresp.BodyInflate()
         if err != nil {
             return ffuf.Response{}, err
         }
-    } else {
+    default:
         respbody = httpresp.Body()
     }
 

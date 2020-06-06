@@ -157,8 +157,9 @@ func main() {
     }
 
     if err := filter.CalibrateIfNeeded(job); err != nil {
-        fmt.Fprintf(os.Stderr, "Error in autocalibration, exiting: %s\n", err)
-        os.Exit(1)
+        // Shouldn't exit when autocalibration failed
+        fmt.Fprintf(os.Stderr, "Error in autocalibration: %s\n", err)
+        // os.Exit(1)
     }
 
     // Job handles waiting for goroutines to complete itself
