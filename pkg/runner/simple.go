@@ -1,9 +1,11 @@
 package runner
 
 import (
+    "bytes"
     "context"
     "crypto/tls"
     "errors"
+    "fmt"
     "net"
     "net/textproto"
     "strconv"
@@ -150,6 +152,7 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
         }
     }
 
+
     contentEncoding := string(httpresp.Header.Peek(fasthttp.HeaderContentEncoding))
     var respbody []byte
 
@@ -176,7 +179,37 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
     resp.ContentWords = int64(wordsSize)
     resp.ContentLines = int64(linesSize)
 
+    statusFormat := fmt.Sprintf("Status: %d, Size: %d, Words: %d, Lines: %d", resp.StatusCode, resp.ContentLength, resp.ContentWords, resp.ContentLines)
+    if len(r.config.OutputDirectory) > 0 {
+        httpreq := dumpRequest(httpreq, statusFormat)
+        resp.Request.Raw = httpreq
+        resp.Raw = dumpResponse(httpresp, string(respbody))
+    }
+
     return resp, nil
+}
+
+func dumpRequest(req *fasthttp.Request, statusFormat string) string {
+    buf := &bytes.Buffer{}
+    buf.WriteString(req.URI().String())
+    buf.WriteString("\n\n")
+    buf.WriteString(statusFormat)
+    buf.WriteString("\n\n")
+    req.Header.VisitAll(func(key, value []byte) {
+        buf.WriteString(fmt.Sprintf("> %s: %s\n", string(key), string(value)))
+    })
+    return buf.String()
+}
+
+func dumpResponse(resp *fasthttp.Response, body string) string {
+    buf := &bytes.Buffer{}
+    buf.WriteString(fmt.Sprintf("< HTTP/1.1 %d\n", resp.StatusCode()))
+    resp.Header.VisitAll(func(key, value []byte) {
+        buf.WriteString(fmt.Sprintf("< %s: %s\n", string(key), string(value)))
+    })
+    buf.WriteString("\n")
+    buf.WriteString(body)
+    return buf.String()
 }
 
 func getRedirectURL(baseURL string, location []byte) string {
