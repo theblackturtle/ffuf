@@ -2,7 +2,6 @@ package runner
 
 import (
     "bytes"
-    "context"
     "crypto/tls"
     "errors"
     "fmt"
@@ -30,25 +29,14 @@ type SimpleRunner struct {
 
 func NewSimpleRunner(conf *ffuf.Config, replay bool) ffuf.RunnerProvider {
     var simplerunner SimpleRunner
-    dialer := fasthttp.TCPDialer{
-        Concurrency: 1000,
-        Resolver: &net.Resolver{
-            PreferGo:     true,
-            StrictErrors: false,
-            Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-                d := net.Dialer{}
-                return d.DialContext(ctx, "udp", "8.8.8.8:53")
-            },
-        },
-    }
     simplerunner.config = conf
     simplerunner.client = &fasthttp.Client{
         NoDefaultUserAgentHeader: true,
         Dial: func(addr string) (net.Conn, error) {
-            return dialer.DialDualStackTimeout(addr, 30*time.Second)
+            return fasthttp.DialDualStackTimeout(addr, 30*time.Second)
         },
-        ReadBufferSize:  1024 * 48,
-        WriteBufferSize: 1024 * 48,
+        ReadBufferSize:  48 << 10,
+        WriteBufferSize: 48 << 10,
         TLSConfig: &tls.Config{
             InsecureSkipVerify: true,
             Renegotiation:      tls.RenegotiateOnceAsClient, // For "local error: tls: no renegotiation"
@@ -91,10 +79,10 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
     var err error
     httpreq := fasthttp.AcquireRequest()
     defer fasthttp.ReleaseRequest(httpreq)
-    httpreq.SetRequestURI(req.Url)
+    httpreq.Header.SetRequestURI(req.Url)
     httpreq.Header.SetMethod(req.Method)
     httpreq.SetBody(req.Data)
-    httpreq.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+    httpreq.Header.Set("Accept", "*/*")
     httpreq.Header.Set("Accept-Language", "en-US,en;q=0.8")
 
     for key, value := range req.Headers {
@@ -102,13 +90,13 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
     }
     // set default User-Agent header if not present
     if _, ok := req.Headers["User-Agent"]; !ok {
-        httpreq.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36")
+        httpreq.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36")
     }
 
     // Handle Go http.Request special cases
-    // if _, ok := req.Headers["Host"]; ok {
-    //     httpreq.SetHost(req.Headers["Host"])
-    // }
+    if _, ok := req.Headers["Host"]; ok {
+        httpreq.SetHost(req.Headers["Host"])
+    }
 
     httpresp := fasthttp.AcquireResponse()
     defer fasthttp.ReleaseResponse(httpresp)
@@ -135,8 +123,9 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
             if len(nextLocation) == 0 {
                 return ffuf.Response{}, errors.New("location header not found")
             }
-            req.Url = string(nextLocation)
-            httpreq.SetRequestURI(getRedirectURL(req.Url, nextLocation))
+            redirectUrl := getRedirectURL(req.Url, nextLocation)
+            req.Url = redirectUrl
+            httpreq.Header.SetRequestURI(redirectUrl)
             continue
         }
         break
@@ -151,7 +140,6 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
             return resp, nil
         }
     }
-
 
     contentEncoding := string(httpresp.Header.Peek(fasthttp.HeaderContentEncoding))
     var respbody []byte
