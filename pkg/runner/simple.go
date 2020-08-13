@@ -72,7 +72,7 @@ func (r *SimpleRunner) Prepare(input map[string][]byte) (ffuf.Request, error) {
 }
 
 /*
-TODO: fix DumpRequestOut, DumpResponse, set proxy
+TODO: Implement proxy
 */
 
 func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
@@ -162,10 +162,8 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
     resp.ContentLength = int64(utf8.RuneCountInString(string(respbody)))
     resp.Data = respbody
 
-    wordsSize := len(strings.Split(string(resp.Data), " "))
-    linesSize := len(strings.Split(string(resp.Data), "\n"))
-    resp.ContentWords = int64(wordsSize)
-    resp.ContentLines = int64(linesSize)
+    resp.ContentWords = int64(len(strings.Split(string(resp.Data), " ")))
+    resp.ContentLines = int64(len(strings.Split(string(resp.Data), "\n")))
 
     statusFormat := fmt.Sprintf("Status: %d, Size: %d, Words: %d, Lines: %d", resp.StatusCode, resp.ContentLength, resp.ContentWords, resp.ContentLines)
     if len(r.config.OutputDirectory) > 0 {

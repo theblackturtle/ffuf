@@ -337,6 +337,8 @@ func (j *Job) CalibrateResponses() ([]Response, error) {
         cInputs = append(cInputs, ".htaccess"+RandomString(16))
         cInputs = append(cInputs, RandomString(16)+"/")
         cInputs = append(cInputs, RandomString(16))
+        cInputs = append(cInputs, RandomString(6)+"`z'z\"${{%{{\\")
+        cInputs = append(cInputs, RandomString(6)+"\\z`z'z\"${{%{{\\")
     } else {
         cInputs = append(cInputs, j.Config.AutoCalibrationStrings...)
     }
