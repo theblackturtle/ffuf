@@ -77,63 +77,63 @@ TODO: Implement proxy
 
 func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
     var err error
-    httpreq := fasthttp.AcquireRequest()
-    defer fasthttp.ReleaseRequest(httpreq)
-    httpreq.Header.SetRequestURI(req.Url)
-    httpreq.Header.SetMethod(req.Method)
-    httpreq.SetBody(req.Data)
-    httpreq.Header.Set("Accept", "*/*")
-    httpreq.Header.Set("Accept-Language", "en-US,en;q=0.8")
+    fasthttpReq := fasthttp.AcquireRequest()
+    defer fasthttp.ReleaseRequest(fasthttpReq)
+    fasthttpReq.Header.SetRequestURI(req.Url)
+    fasthttpReq.Header.SetMethod(req.Method)
+    fasthttpReq.SetBody(req.Data)
+    fasthttpReq.Header.Set("Accept", "*/*")
+    fasthttpReq.Header.Set("Accept-Language", "en-US,en;q=0.8")
 
     for key, value := range req.Headers {
-        httpreq.Header.Set(key, value)
+        fasthttpReq.Header.Set(key, value)
     }
     // set default User-Agent header if not present
     if _, ok := req.Headers["User-Agent"]; !ok {
-        httpreq.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36")
+        fasthttpReq.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36")
     }
 
     // Handle Go http.Request special cases
     if _, ok := req.Headers["Host"]; ok {
-        httpreq.SetHost(req.Headers["Host"])
+        fasthttpReq.SetHost(req.Headers["Host"])
     }
-    req.Host = string(httpreq.Host())
+    req.Host = string(fasthttpReq.Host())
 
-    httpresp := fasthttp.AcquireResponse()
-    defer fasthttp.ReleaseResponse(httpresp)
+    fasthttpResp := fasthttp.AcquireResponse()
+    defer fasthttp.ReleaseResponse(fasthttpResp)
 
     redirectTimes := 0
     for {
-        err = r.client.DoTimeout(httpreq, httpresp, time.Duration(r.config.Timeout)*time.Second)
+        err = r.client.DoTimeout(fasthttpReq, fasthttpResp, time.Duration(r.config.Timeout)*time.Second)
         if err != nil {
             if errors.Is(err, fasthttp.ErrBodyTooLarge) {
-                resp := ffuf.NewResponse(httpresp, req)
+                resp := ffuf.NewResponse(fasthttpResp, req)
                 resp.Cancelled = true
                 return resp, nil
             } else {
                 return ffuf.Response{}, err
             }
         }
-        if fasthttp.StatusCodeIsRedirect(httpresp.StatusCode()) && r.config.FollowRedirects {
+        if fasthttp.StatusCodeIsRedirect(fasthttpResp.StatusCode()) && r.config.FollowRedirects {
             redirectTimes++
             if redirectTimes > MaxRedirectTimes {
                 return ffuf.Response{}, errors.New("too many redirects")
             }
 
-            nextLocation := httpresp.Header.Peek(fasthttp.HeaderLocation)
+            nextLocation := fasthttpResp.Header.Peek(fasthttp.HeaderLocation)
             if len(nextLocation) == 0 {
                 return ffuf.Response{}, errors.New("location header not found")
             }
             redirectUrl := getRedirectURL(req.Url, nextLocation)
             req.Url = redirectUrl
-            httpreq.Header.SetRequestURI(redirectUrl)
+            fasthttpReq.Header.SetRequestURI(redirectUrl)
             continue
         }
         break
     }
-    resp := ffuf.NewResponse(httpresp, req)
+    resp := ffuf.NewResponse(fasthttpResp, req)
     // Check if we should download the resource or not
-    size, err := strconv.Atoi(string(httpresp.Header.Peek(fasthttp.HeaderContentLength)))
+    size, err := strconv.Atoi(string(fasthttpResp.Header.Peek(fasthttp.HeaderContentLength)))
     if err == nil {
         resp.ContentLength = int64(size)
         if (r.config.IgnoreBody) || (size > MAX_DOWNLOAD_SIZE) {
@@ -142,35 +142,35 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
         }
     }
 
-    contentEncoding := string(httpresp.Header.Peek(fasthttp.HeaderContentEncoding))
-    var respbody []byte
+    contentEncoding := string(fasthttpResp.Header.Peek(fasthttp.HeaderContentEncoding))
+    var respBody []byte
 
     switch contentEncoding {
     case "gzip":
-        respbody, err = httpresp.BodyGunzip()
+        respBody, err = fasthttpResp.BodyGunzip()
         if err != nil {
             return ffuf.Response{}, err
         }
     case "deflate":
-        respbody, err = httpresp.BodyInflate()
+        respBody, err = fasthttpResp.BodyInflate()
         if err != nil {
             return ffuf.Response{}, err
         }
     default:
-        respbody = httpresp.Body()
+        respBody = fasthttpResp.Body()
     }
 
-    resp.ContentLength = int64(utf8.RuneCountInString(string(respbody)))
-    resp.Data = respbody
+    resp.ContentLength = int64(utf8.RuneCountInString(string(respBody)))
+    resp.Data = respBody
 
     resp.ContentWords = int64(len(strings.Split(string(resp.Data), " ")))
     resp.ContentLines = int64(len(strings.Split(string(resp.Data), "\n")))
 
     statusFormat := fmt.Sprintf("Status: %d, Size: %d, Words: %d, Lines: %d", resp.StatusCode, resp.ContentLength, resp.ContentWords, resp.ContentLines)
     if len(r.config.OutputDirectory) > 0 {
-        httpreq := dumpRequest(httpreq, statusFormat)
+        httpreq := dumpRequest(fasthttpReq, statusFormat)
         resp.Request.Raw = httpreq
-        resp.Raw = dumpResponse(httpresp, string(respbody))
+        resp.Raw = dumpResponse(fasthttpResp, string(respBody))
     }
 
     return resp, nil
