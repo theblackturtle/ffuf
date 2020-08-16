@@ -124,9 +124,23 @@ func (r *SimpleRunner) Execute(req *ffuf.Request) (ffuf.Response, error) {
             if len(nextLocation) == 0 {
                 return ffuf.Response{}, errors.New("location header not found")
             }
-            redirectUrl := getRedirectURL(req.Url, nextLocation)
-            req.Url = redirectUrl
-            fasthttpReq.Header.SetRequestURI(redirectUrl)
+            // redirectUrl := getRedirectURL(req.Url, nextLocation)
+            // req.Url = redirectUrl
+            // fasthttpReq.Header.SetRequestURI(redirectUrl)
+            u := fasthttpReq.URI()
+            u.UpdateBytes(nextLocation)
+            fasthttpResp.Header.VisitAllCookie(func(key, value []byte) {
+                c := fasthttp.AcquireCookie()
+                defer fasthttp.ReleaseCookie(c)
+
+                c.ParseBytes(value)
+
+                if expire := c.Expire(); expire != fasthttp.CookieExpireUnlimited && expire.Before(time.Now()) {
+                    fasthttpReq.Header.DelCookieBytes(key)
+                } else {
+                    fasthttpReq.Header.SetCookieBytesKV(key, c.Value())
+                }
+            })
             continue
         }
         break
